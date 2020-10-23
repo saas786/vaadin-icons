@@ -1,13 +1,47 @@
+/**
+ * Build a Vaadin Icons sub-selection iconset and iconfont.
+ */
 
 'use strict';
 
 const gulp = require('gulp');
+const iconfont = require('gulp-iconfont');
 const modify = require('gulp-modify');
 const cheerio = require('cheerio');
 const concat = require('gulp-concat');
+const sort = require('gulp-sort');
+
+const vaadinIconFontData = require('./assets/vaadin-font-icons.json');
+
+const cxlVaadinIconset = [
+  'check-circle.svg',
+  'play-circle-o.svg',
+  'quote-right.svg',
+];
+
+/**
+ * Normalize file sort order across platforms (OS X vs Linux, maybe others).
+ *
+ * Before: `[..., 'eye-disabled', 'eye', ...]`
+ * After:  `[..., 'eye', 'eye-disabled', ...]`
+ *
+ * Order of appearance impacts assigned Unicode codepoints, and sometimes build diffs.
+ *
+ * @see https://github.com/nfroidure/svgicons2svgfont/pull/82
+ * @see https://github.com/nfroidure/svgicons2svgfont/blob/master/src/filesorter.js
+ * @see http://support.ecisolutions.com/doc-ddms/help/reportsmenu/ascii_sort_order_chart.htm
+ */
+function sortIconFilesNormalized(file1, file2) {
+  return file1.replace(/-/g, '~').localeCompare(file2.replace(/-/g, '~'), 'en-US');
+}
 
 gulp.task('icons', function() {
-  return gulp.src(['assets/svg/*.svg'], {base: '.'})
+  return gulp.src(cxlVaadinIconset, {cwd: './assets/svg'})
+    .pipe(sort({
+      comparator: function(file1, file2) {
+        return sortIconFilesNormalized(file1.relative, file2.relative);
+      }
+    }))
     .pipe(modify({
       fileModifier: function(file, contents) {
         var id = file.path.replace(/.*\/(.*).svg/, '$1');
@@ -42,6 +76,51 @@ This program is available under Apache License Version 2.0, available at https:/
       }
     }))
     .pipe(gulp.dest('.'));
+});
+
+gulp.task('iconfont', function() {
+  return gulp.src(cxlVaadinIconset, {cwd: './assets/svg'})
+    .pipe(sort({
+      comparator: function(file1, file2) {
+        return sortIconFilesNormalized(file1.relative, file2.relative);
+      }
+    }))
+    .pipe(iconfont({
+      fontName: 'vaadin-icons',
+      formats: ['woff', 'woff2'],
+      fontHeight: 1000,
+      ascent: 850,
+      descent: 150,
+      fixedWidth: true,
+      normalize: true,
+      /**
+       * Avoid `@vaadin/vaadin-lumo-styles` default Unicode codepoints conflict.
+       * This is a one-way callback street.
+       *
+       * @param file
+       * @param cb
+       * @see https://github.com/nfroidure/svgicons2svgfont#optionsmetadataprovider
+       */
+      metadataProvider: function(file, cb) {
+        require('svgicons2svgfont/src/metadata')({
+          prependUnicode: false
+        })(file, function(err, metadata) {
+          const glyphData = vaadinIconFontData.find(iconData => metadata.name === iconData.name);
+
+          metadata.unicode = [ String.fromCodePoint(parseInt(`0x${glyphData.code}`, 16)) ];
+
+          cb(err, metadata);
+        });
+      },
+    }))
+    .on('glyphs', function(glyphs, options) {
+      glyphs.forEach((g, idx) => {
+        console.log(g.name, '\\' + g.unicode[0].charCodeAt(0).toString(16));
+      });
+
+      return glyphs;
+    })
+    .pipe(gulp.dest('.'))
 });
 
 // Generates an AsciiDoc table of all icons from the JSON metadata.
