@@ -13,10 +13,30 @@ const sort = require('gulp-sort');
 
 const vaadinIconFontData = require('./assets/vaadin-font-icons.json');
 
-const cxlVaadinIconset = [
-  'check-circle.svg',
-  'play-circle-o.svg',
+const plmgroupVaadinIconset = [
+  'academy-cap.svg',
+  'bookmark.svg',
+  'calendar.svg',
+  'cart.svg',
+  'chevron-down-small.svg',
+  'clock.svg',
+  'coffee.svg',
+  'desktop.svg',
+  'envelope.svg',
+  'facebook-square.svg',
+  'file.svg',
+  'file-text.svg',
+  'globe-wire.svg',
+  'group.svg',
+  'home.svg',
+  'lightbulb.svg',
+  'location-arrow.svg',
+  'mobile.svg',
+  'phone.svg',
   'quote-right.svg',
+  'search.svg',
+  'table.svg',
+  'tag.svg',
 ];
 
 /**
@@ -36,7 +56,7 @@ function sortIconFilesNormalized(file1, file2) {
 }
 
 gulp.task('icons', function() {
-  return gulp.src(cxlVaadinIconset, {cwd: './assets/svg'})
+  return gulp.src(plmgroupVaadinIconset, {cwd: './assets/svg'})
     .pipe(sort({
       comparator: function(file1, file2) {
         return sortIconFilesNormalized(file1.relative, file2.relative);
@@ -79,7 +99,7 @@ This program is available under Apache License Version 2.0, available at https:/
 });
 
 gulp.task('iconfont', function() {
-  return gulp.src(cxlVaadinIconset, {cwd: './assets/svg'})
+  return gulp.src(plmgroupVaadinIconset, {cwd: './assets/svg'})
     .pipe(sort({
       comparator: function(file1, file2) {
         return sortIconFilesNormalized(file1.relative, file2.relative);
